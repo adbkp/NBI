@@ -7,7 +7,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 
-from scipy.ndimage import center_of_mass
+
 
 
 # Corrected raw URL for the model file
