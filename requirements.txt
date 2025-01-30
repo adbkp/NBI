@@ -1,9 +1,7 @@
 numpy
 pandas
 matplotlib
-PIL
 joblib
 requests
-io
 scipy
 scikit-learn
