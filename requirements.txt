@@ -4,6 +4,6 @@ matplotlib
 PIL
 joblib
 requests
-io import BytesIO
+io
 scipy
 scikit-learn
