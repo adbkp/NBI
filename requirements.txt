@@ -1,0 +1,9 @@
+numpy
+pandas
+matplotlib
+PIL
+joblib
+requests
+io import BytesIO
+scipy
+scikit-learn
