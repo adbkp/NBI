@@ -10,7 +10,7 @@ from io import BytesIO
 from scipy.ndimage import center_of_mass
 
 
-# Corrected raw URL for the model file
+# Corrected raw URL for the model filet
 model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/my_model.pkl"
 
 
@@ -44,6 +44,11 @@ def preprocess_image(image):
     
     # Convert to numpy array and invert colors (MNIST has white digits on black background)
     image_array = 255 - np.array(background)
+    
+    # Apply thresholding to increase contrast (80% black)
+    threshold = np.percentile(image_array, 20)  # Use 20th percentile as threshold
+    image_array[image_array < threshold] = 0  # Set values below threshold to black
+    image_array[image_array >= threshold] = 255  # Set values above threshold to white
     
     # Center the image using center of mass
     cy, cx = center_of_mass(image_array)
