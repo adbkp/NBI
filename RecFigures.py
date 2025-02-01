@@ -8,10 +8,11 @@ import requests
 from io import BytesIO
 
 from scipy.ndimage import center_of_mass
+from sklearn.datasets import fetch_openml
 
 
 # Corrected raw URL for the model file
-model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/my_model.pkl"
+# model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/my_model.pkl"
 
 
 
@@ -19,12 +20,17 @@ model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/my_model.pkl"
 @st.cache_resource
 def load_model():
     try:
-        response = requests.get(model_url)
-        response.raise_for_status()  # Raise an error for bad responses
-        return joblib.load(BytesIO(response.content))
+        # Alternativ 1: Använd lokal fil
+        return joblib.load('mnist_model.pkl')
+        
+        # Alternativ 2: Fortsätt med URL men använd en ny tränad modell
+        # model_url = "URL_TO_NEW_MODEL"
+        # response = requests.get(model_url)
+        # response.raise_for_status()
+        # return joblib.load(BytesIO(response.content))
     except Exception as e:
-      st.error(f"Error loading model: {e}")
-      return None
+        st.error(f"Error loading model: {e}")
+        return None
     
 
 
@@ -38,11 +44,19 @@ def preprocess_image(image):
     # Convert to numpy array and invert colors (MNIST has white digits on black background)
     image_array = 255 - np.array(image)
     
+    # Add debugging information
+    st.write("Image array shape before reshape:", image_array.shape)
+    st.write("Min value:", image_array.min(), "Max value:", image_array.max())
+    
     # Normalize to [0, 1] as per MNIST standard
     image_array = image_array / 255.0
     
     # Reshape to (1, 784) for model input
     image_array = image_array.reshape(1, -1)
+    
+    # Add more debugging
+    st.write("Final array shape:", image_array.shape)
+    st.write("Final min value:", image_array.min(), "Final max value:", image_array.max())
     
     return image_array
 
@@ -69,6 +83,15 @@ def main():
         model = load_model()
         if model is None:
             return
+        
+        # Add model information
+        st.write("Model information:")
+        st.write("Model type:", type(model).__name__)
+        try:
+            st.write("Number of features expected:", model.n_features_in_)
+            st.write("Classes:", model.classes_)
+        except AttributeError:
+            st.write("Could not get model details")
 
         # Add option to use sample MNIST image
         use_sample = st.checkbox("Use sample MNIST image")
@@ -133,6 +156,16 @@ def main():
                 
             except Exception as e:
                 st.error(f"Prediction error: {e}")
+
+        if model is not None:
+            # Test prediction with known MNIST sample
+            try:
+                X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False, parser='auto')
+                test_sample = X[0:1] / 255.0  # Ta första MNIST-exemplet
+                test_prediction = model.predict(test_sample)
+                st.write(f"Test prediction on known MNIST sample (should be {y[0]}): {test_prediction[0]}")
+            except Exception as e:
+                st.error(f"Test prediction failed: {e}")
 
 if __name__ == "__main__":
     main()
