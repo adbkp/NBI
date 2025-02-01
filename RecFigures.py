@@ -44,6 +44,10 @@ def preprocess_image(image):
     
     # Convert to numpy array and invert colors (MNIST has white digits on black background)
     image_array = 255 - np.array(background)
+
+    from scipy.ndimage import sobel
+    edges = sobel(image_array)
+    image_array = np.where(edges > np.percentile(edges, 75), 255, 0)
     
     # Apply thresholding to increase contrast (80% black)
     threshold = np.percentile(image_array, 5)  # Use 20th percentile as threshold
