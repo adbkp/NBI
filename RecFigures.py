@@ -32,26 +32,13 @@ def preprocess_image(image):
     # Convert to grayscale
     image = image.convert("L")
     
-    # Resize to 20x20 pixels, preserving aspect ratio
-    image.thumbnail((20, 20), Image.LANCZOS)
-    
-    # Create a 28x28 white background
-    background = Image.new('L', (28, 28), color=255)
-    
-    # Paste the resized image onto the center of the background
-    offset = ((28 - image.size[0]) // 2, (28 - image.size[1]) // 2)
-    background.paste(image, offset)
+    # Resize to 28x28 pixels directly (MNIST standard size)
+    image = image.resize((28, 28), Image.LANCZOS)
     
     # Convert to numpy array and invert colors (MNIST has white digits on black background)
-    image_array = 255 - np.array(background)
+    image_array = 255 - np.array(image)
     
-    # Center the image using center of mass
-    cy, cx = center_of_mass(image_array)
-    shift_x, shift_y = np.round(14 - cx).astype(int), np.round(14 - cy).astype(int)
-    image_array = np.roll(image_array, shift_x, axis=1)
-    image_array = np.roll(image_array, shift_y, axis=0)
-    
-    # Normalize to [0, 1]
+    # Normalize to [0, 1] as per MNIST standard
     image_array = image_array / 255.0
     
     # Reshape to (1, 784) for model input
@@ -76,21 +63,32 @@ def main():
 
     if nav == "Number Recognition":
         st.title("Number Recognition")
-        st.write('Upload a PNG or JPEG file with a handwritten number, and the application will recognize it.')
+        st.write('Upload a PNG or JPEG file with a handwritten number, or use a sample MNIST image.')
 
         # Load the model
         model = load_model()
         if model is None:
             return
 
-        # File uploader
-        uploaded_file = st.file_uploader("Upload an image file", type=["jpeg", "jpg", "png"])
+        # Add option to use sample MNIST image
+        use_sample = st.checkbox("Use sample MNIST image")
+        
+        if use_sample:
+            # Load and display a sample MNIST image
+            # You'll need to add sample MNIST images to your project
+            sample_image = Image.open("path_to_sample_mnist_image.png")
+            uploaded_file = None
+            image = sample_image
+        else:
+            # File uploader
+            uploaded_file = st.file_uploader("Upload an image file", type=["jpeg", "jpg", "png"])
+            if uploaded_file is not None:
+                image = Image.open(uploaded_file)
+            else:
+                image = None
 
-        if uploaded_file is not None:
+        if image is not None:
             # Display the uploaded image
-            image = Image.open(uploaded_file)
-            
-            # Create two columns for image display
             col1, col2 = st.columns(2)
             
             with col1:
@@ -99,39 +97,40 @@ def main():
             
             with col2:
                 st.header("Processed Image")
-                # Preprocess and display the resized grayscale image
+                # Display the processed image
                 processed_image = image.convert("L").resize((28, 28))
                 st.image(processed_image, use_container_width=True)
 
             # Preprocess the image
             preprocessed_image = preprocess_image(image)
 
-            # Make prediction with more detailed output
             try:
                 # Get predictions and probabilities
                 predictions = model.predict(preprocessed_image)
                 
-                # Try to get prediction probabilities if available
                 try:
                     proba = model.predict_proba(preprocessed_image)[0]
+                    # Show top 3 predictions with probabilities
+                    st.write("Top 3 Predictions:")
+                    top_3_idx = np.argsort(proba)[-3:][::-1]
+                    for idx in top_3_idx:
+                        st.write(f"Digit {idx}: {proba[idx]*100:.2f}%")
+                    
                     # Show full probability distribution
-                    st.write("Prediction Probabilities:")
+                    st.write("\nFull Probability Distribution:")
                     prob_df = pd.DataFrame({
                         'Digit': range(10),
-                        'Probability': proba
+                        'Probability (%)': proba * 100
                     })
-                    st.dataframe(prob_df)
+                    st.dataframe(prob_df.style.format({'Probability (%)': '{:.2f}'}))
+                    
                 except AttributeError:
                     st.write("Probability distribution not available")
 
-                # Show prediction details
+                # Show final prediction
                 predicted_digit = predictions[0]
-                st.write(f"**Raw Prediction:** {predicted_digit}")
+                st.write(f"\n**Final Prediction:** {predicted_digit}")
                 
-                # Additional debugging information
-                st.write("Preprocessed Image Array:")
-                st.write(preprocessed_image)
-
             except Exception as e:
                 st.error(f"Prediction error: {e}")
 
