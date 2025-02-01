@@ -62,7 +62,13 @@ def preprocess_image(image):
     # Reshape to (1, 784) for model input
     image_array = image_array.reshape(1, -1)
     
-    return image_array
+     # Create a displayable image from the preprocessed array
+    displayable_image = Image.fromarray((image_array * 255).astype(np.uint8))
+    
+    # Reshape to (1, 784) for model input
+    image_array = image_array.reshape(1, -1)
+    
+    return image_array, displayable_image
 
 # Creating the Streamlit application
 def main():
@@ -110,6 +116,13 @@ def main():
 
             # Preprocess the image
             preprocessed_image = preprocess_image(image)
+
+            # Preprocess the image
+            preprocessed_image, displayable_image = preprocess_image(image)
+
+            with col2:
+                st.header("Processed Image")
+                st.image(displayable_image, use_container_width=True)
 
             # Make prediction with more detailed output
             try:
