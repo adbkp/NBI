@@ -46,7 +46,7 @@ def preprocess_image(image):
     image_array = 255 - np.array(background)
     
     # Apply thresholding to increase contrast (80% black)
-    threshold = np.percentile(image_array, 20)  # Use 20th percentile as threshold
+    threshold = np.percentile(image_array, 5)  # Use 20th percentile as threshold
     image_array[image_array < threshold] = 0  # Set values below threshold to black
     image_array[image_array >= threshold] = 255  # Set values above threshold to white
     
