@@ -62,6 +62,53 @@ def preprocess_image(image):
     
     return image_array
 
+
+    # Convert to grayscale
+    image = image.convert("L")
+    
+    # Add padding to make it square while preserving aspect ratio
+    w, h = image.size
+    max_dim = max(w, h)
+    new_img = Image.new('L', (max_dim, max_dim), 255)  # white background
+    offset = ((max_dim - w) // 2, (max_dim - h) // 2)
+    new_img.paste(image, offset)
+    image = new_img
+    
+    # Resize to 28x28 pixels (MNIST standard size)
+    image = image.resize((28, 28), Image.Resampling.LANCZOS)
+    
+    # Convert to numpy array and invert colors (MNIST has white digits on black background)
+    image_array = 255 - np.array(image)
+    
+    # Threshold to make it more binary-like, as MNIST is mostly binary
+    threshold = 128
+    image_array = (image_array > threshold) * 255
+    
+    # Add center of mass centering (like MNIST)
+    from scipy.ndimage import center_of_mass
+    cy, cx = center_of_mass(image_array)
+    rows, cols = image_array.shape
+    shift_x = int(cols/2 - cx)
+    shift_y = int(rows/2 - cy)
+    image_array = np.roll(image_array, shift_y, axis=0)
+    image_array = np.roll(image_array, shift_x, axis=1)
+    
+    # Normalize to [0, 1]
+    image_array = image_array / 255.0
+    
+    # Add debugging visualizations
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+    ax1.imshow(image, cmap='gray')
+    ax1.set_title('Original')
+    ax2.imshow(image_array, cmap='gray')
+    ax2.set_title('Preprocessed')
+    st.pyplot(fig)
+    
+    # Reshape to (1, 784) for model input
+    image_array = image_array.reshape(1, -1)
+    
+    return image_array
+
 # Funktion för att spara MNIST-exempel
 def save_mnist_samples():
     # Skapa en mapp för exempel om den inte finns
