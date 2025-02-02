@@ -14,7 +14,7 @@ from sklearn.datasets import fetch_openml
 
 
 # Corrected raw URL for the model file
-model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/my_model.pkl"
+model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/mnist_model_c.pkl"
 
 
 
