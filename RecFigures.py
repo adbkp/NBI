@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import os
+import matplotlib.pyplot as plt
 
 import streamlit as st
 from PIL import Image
@@ -12,7 +14,7 @@ from sklearn.datasets import fetch_openml
 
 
 # Corrected raw URL for the model file
-# model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/my_model.pkl"
+model_url = "https://raw.githubusercontent.com/adbkp/NBI/NBI-AI/my_model.pkl"
 
 
 
@@ -21,13 +23,13 @@ from sklearn.datasets import fetch_openml
 def load_model():
     try:
         # Alternativ 1: Använd lokal fil
-        return joblib.load('mnist_model.pkl')
+        # return joblib.load('mnist_model.pkl')
         
         # Alternativ 2: Fortsätt med URL men använd en ny tränad modell
         # model_url = "URL_TO_NEW_MODEL"
-        # response = requests.get(model_url)
-        # response.raise_for_status()
-        # return joblib.load(BytesIO(response.content))
+        response = requests.get(model_url)
+        response.raise_for_status()
+        return joblib.load(BytesIO(response.content))
     except Exception as e:
         st.error(f"Error loading model: {e}")
         return None
@@ -59,6 +61,32 @@ def preprocess_image(image):
     st.write("Final min value:", image_array.min(), "Final max value:", image_array.max())
     
     return image_array
+
+# Funktion för att spara MNIST-exempel
+def save_mnist_samples():
+    # Skapa en mapp för exempel om den inte finns
+    sample_dir = "mnist_samples"
+    if not os.path.exists(sample_dir):
+        os.makedirs(sample_dir)
+    
+    # Hämta några exempel från MNIST
+    X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False, parser='auto')
+    
+    # Spara de första 10 bilderna (en av varje siffra)
+    for i in range(10):
+        # Hitta första förekomsten av varje siffra
+        idx = np.where(y == str(i))[0][0]
+        
+        # Reshape bilden till 28x28
+        img = X[idx].reshape(28, 28)
+        
+        # Spara bilden
+        plt.imsave(
+            os.path.join(sample_dir, f'mnist_sample_{i}.png'),
+            img,
+            cmap='gray'
+        )
+    return sample_dir
 
 # Creating the Streamlit application
 def main():
@@ -97,11 +125,18 @@ def main():
         use_sample = st.checkbox("Use sample MNIST image")
         
         if use_sample:
-            # Load and display a sample MNIST image
-            # You'll need to add sample MNIST images to your project
-            sample_image = Image.open("path_to_sample_mnist_image.png")
-            uploaded_file = None
-            image = sample_image
+            # Skapa/använd MNIST-exempel
+            sample_dir = save_mnist_samples()
+            
+            # Låt användaren välja vilken siffra att testa
+            sample_digit = st.selectbox(
+                "Select a sample digit to test",
+                range(10)
+            )
+            
+            # Ladda vald exempel-bild
+            sample_path = os.path.join(sample_dir, f'mnist_sample_{sample_digit}.png')
+            image = Image.open(sample_path)
         else:
             # File uploader
             uploaded_file = st.file_uploader("Upload an image file", type=["jpeg", "jpg", "png"])
