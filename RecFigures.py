@@ -88,7 +88,7 @@ def save_mnist_samples():
         )
     return sample_dir
 
-# Creating the Streamlit application
+# Creating the Streamlit application . 
 def main():
     st.sidebar.title("Navigation Menu")
     nav = st.sidebar.radio("Choose a Section", ["Purpose", "Number Recognition","About"])
